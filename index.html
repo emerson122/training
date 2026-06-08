@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitRPG - Tu Aventura Fitness</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --neon: #00ff88;
+  --neon2: #ff6b35;
+  --neon3: #7c3aed;
+  --dark: #0a0a0f;
+  --dark2: #111118;
+  --dark3: #1a1a28;
+  --card: #16162a;
+  --border: rgba(0,255,136,0.15);
+  --text: #e8e8ff;
+  --muted: #7878aa;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --xp-bar: #00ff88;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--dark);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Stars background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 70%, rgba(255,255,255,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 85%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(2px 2px at 55% 10%, rgba(0,255,136,0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 90% 45%, rgba(124,58,237,0.3) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+/* Header */
+.hdr {
+  background: linear-gradient(135deg, #0d0d1a, #1a0d2e);
+  border-bottom: 1px solid rgba(124,58,237,0.4);
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.hdr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.logo { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900; color: var(--neon); letter-spacing: 2px; }
+.logo span { color: var(--neon2); }
+.lvl-badge {
+  background: linear-gradient(135deg, var(--neon3), #5b21b6);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* XP Bar */
+.xp-wrap { margin-bottom: 6px; }
+.xp-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.xp-track {
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon), #00ccff);
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.xp-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+/* Stats row */
+.stats-row { display: flex; gap: 8px; padding: 12px 16px; }
+.stat-card {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.stat-val { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; color: var(--neon); }
+.stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+/* Tabs */
+.tabs { display: flex; background: var(--dark2); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.tab {
+  flex: 1;
+  padding: 12px 4px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tab.active { color: var(--neon); border-bottom-color: var(--neon); }
+
+/* Sections */
+.section { display: none; padding: 16px; }
+.section.active { display: block; }
+
+/* TODAY workout */
+.day-header {
+  background: var(--dark3);
+  border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.day-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--neon2), #ff3366);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.day-title { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: #fff; }
+.day-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.day-xp { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 600; }
+
+/* Exercise card */
+.ex-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.ex-card.done { border-color: rgba(0,255,136,0.5); }
+.ex-card.active-ex { border-color: rgba(255,107,53,0.7); }
+
+.ex-top {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.ex-emoji { font-size: 28px; flex-shrink: 0; }
+.ex-info { flex: 1; }
+.ex-name { font-size: 15px; font-weight: 600; color: #fff; }
+.ex-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.ex-xp-badge {
+  background: rgba(255,215,0,0.12);
+  color: var(--gold);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ex-check {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.ex-card.done .ex-check { background: var(--neon); border-color: var(--neon); color: #000; }
+
+/* Exercise action panel */
+.ex-panel {
+  display: none;
+  background: rgba(0,0,0,0.3);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 14px 16px;
+}
+.ex-panel.open { display: block; }
+
+/* Timer */
+.timer-display {
+  text-align: center;
+  margin: 8px 0 16px;
+}
+.timer-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--neon);
+  line-height: 1;
+}
+.timer-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* Sets tracker */
+.sets-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; justify-content: center; }
+.set-dot {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--dark);
+}
+.set-dot.done { background: var(--neon); border-color: var(--neon); color: #000; }
+.set-dot.current { border-color: var(--neon2); color: var(--neon2); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+/* Rep counter */
+.rep-counter { display: flex; align-items: center; gap: 16px; justify-content: center; margin-bottom: 14px; }
+.rep-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--dark3);
+  color: var(--text);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.rep-btn:active { transform: scale(0.9); }
+.rep-num { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 900; color: var(--neon2); min-width: 60px; text-align: center; }
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.btn-green { background: linear-gradient(135deg, var(--neon), #00cc6a); color: #000; }
+.btn-orange { background: linear-gradient(135deg, var(--neon2), #ff3366); color: #fff; }
+.btn-purple { background: linear-gradient(135deg, var(--neon3), #5b21b6); color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* Notifications / toasts */
+#toast-wrap {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: 300px;
+}
+.toast {
+  background: var(--dark3);
+  border: 1px solid var(--neon);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+  display: flex; align-items: center; gap: 10px;
+}
+.toast.gold { border-color: var(--gold); }
+.toast.purple { border-color: var(--neon3); }
+@keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes fadeOut { from{opacity:1} to{opacity:0;height:0;padding:0;margin:0} }
+.toast-icon { font-size: 20px; }
+.toast-msg { flex: 1; }
+.toast-title { font-weight: 700; color: #fff; margin-bottom: 2px; }
+.toast-sub { font-size: 11px; color: var(--muted); }
+
+/* Achievement popup */
+.ach-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 9998;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.ach-overlay.show { display: flex; }
+.ach-box {
+  background: linear-gradient(135deg, #1a0d2e, #0d1a2e);
+  border: 2px solid var(--gold);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  animation: popIn 0.5s cubic-bezier(.2,2,.4,1);
+}
+@keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+.ach-emoji { font-size: 64px; margin-bottom: 12px; display: block; }
+.ach-title { font-family: 'Orbitron', monospace; font-size: 20px; color: var(--gold); margin-bottom: 8px; font-weight: 900; }
+.ach-desc { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+.ach-xp { font-family: 'Orbitron', monospace; font-size: 32px; color: var(--neon); margin-bottom: 20px; }
+
+/* Rest timer */
+.rest-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 9997;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+.rest-overlay.show { display: flex; }
+.rest-timer {
+  font-family: 'Orbitron', monospace;
+  font-size: 80px;
+  font-weight: 900;
+  color: var(--neon2);
+  line-height: 1;
+}
+.rest-label { font-size: 16px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+.rest-quote { font-size: 14px; color: var(--text); max-width: 280px; text-align: center; font-style: italic; margin-top: 8px; }
+
+/* Progress rings */
+.ring-wrap { display: flex; gap: 12px; margin-bottom: 16px; }
+.ring-item { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; text-align: center; }
+.ring-svg { width: 60px; height: 60px; }
+.ring-lbl { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Calendar */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--dark3);
+  color: var(--muted);
+  position: relative;
+}
+.cal-day.done { background: rgba(0,255,136,0.15); color: var(--neon); border: 1px solid rgba(0,255,136,0.3); }
+.cal-day.today { border: 2px solid var(--neon2); color: #fff; }
+.cal-day.rest-day { background: rgba(124,58,237,0.1); color: var(--neon3); border: 1px solid rgba(124,58,237,0.2); }
+.cal-day-hdr { font-size: 10px; color: var(--muted); text-align: center; margin-bottom: 6px; font-weight: 600; }
+
+/* Nutrition tips */
+.tip-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.tip-icon { font-size: 32px; flex-shrink: 0; }
+.tip-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.tip-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.tip-time {
+  display: inline-block;
+  margin-top: 6px;
+  background: rgba(0,255,136,0.1);
+  color: var(--neon);
+  border: 1px solid rgba(0,255,136,0.2);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Save URL section */
+.url-box {
+  background: var(--dark3);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.url-title { font-size: 13px; font-weight: 700; color: var(--neon3); margin-bottom: 8px; }
+.url-input {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 11px;
+  font-family: monospace;
+  word-break: break-all;
+  resize: none;
+  height: 60px;
+  margin-bottom: 8px;
+}
+
+/* Bottom nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: rgba(10,10,15,0.95);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  z-index: 200;
+  backdrop-filter: blur(10px);
+}
+.nav-btn {
+  flex: 1;
+  padding: 12px 4px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.nav-btn.active { color: var(--neon); }
+.nav-icon { font-size: 20px; }
+
+/* Streak fire */
+.streak { display: flex; align-items: center; gap: 4px; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: var(--neon2); }
+
+/* Weekly progress */
+.week-row { display: flex; gap: 6px; margin-bottom: 16px; }
+.week-day {
+  flex: 1;
+  background: var(--dark3);
+  border-radius: 10px;
+  padding: 10px 4px;
+  text-align: center;
+}
+.week-day.done { background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.2); }
+.week-day.today { border: 1px solid var(--neon2); }
+.wd-lbl { font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+.wd-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--dark); margin: 0 auto; border: 2px solid rgba(255,255,255,0.1); }
+.week-day.done .wd-dot { background: var(--neon); border-color: var(--neon); }
+.week-day.today .wd-dot { border-color: var(--neon2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--neon3); border-radius: 2px; }
+
+.sec-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.bonus-card {
+  background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,107,53,0.08));
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; gap: 12px; align-items: center;
+}
+.bonus-icon { font-size: 28px; }
+.bonus-title { font-size: 13px; font-weight: 700; color: var(--gold); }
+.bonus-desc { font-size: 12px; color: var(--muted); }
+
+.complete-banner {
+  background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,204,102,0.05));
+  border: 1px solid rgba(0,255,136,0.4);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+  display: none;
+}
+.complete-banner.show { display: block; }
+.complete-emoji { font-size: 48px; display: block; margin-bottom: 8px; }
+.complete-title { font-family: 'Orbitron', monospace; font-size: 16px; color: var(--neon); margin-bottom: 4px; }
+.complete-sub { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="toast-wrap"></div>
+<div class="ach-overlay" id="achOverlay">
+  <div class="ach-box">
+    <span class="ach-emoji" id="achEmoji">🏆</span>
+    <div class="ach-title" id="achTitle">LOGRO DESBLOQUEADO</div>
+    <div class="ach-desc" id="achDesc">¡Increíble!</div>
+    <div class="ach-xp" id="achXp">+100 XP</div>
+    <button class="btn btn-green" onclick="closeAch()">¡CONTINUAR!</button>
+  </div>
+</div>
+<div class="rest-overlay" id="restOverlay">
+  <div class="rest-label">DESCANSO</div>
+  <div class="rest-timer" id="restTimerNum">60</div>
+  <div class="rest-quote" id="restQuote">Respira. Los músculos crecen en el descanso.</div>
+  <button class="btn btn-ghost" style="max-width:200px;margin-top:8px" onclick="skipRest()">Saltar descanso</button>
+</div>
+
+<div id="app">
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo">FIT<span>RPG</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="streak"><span>🔥</span><span id="streakNum">0</span></div>
+        <div class="lvl-badge">NIV <span id="lvlNum">1</span></div>
+      </div>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-label">
+        <span>Experiencia</span>
+        <span><span id="curXp">0</span> / <span id="maxXp">200</span> XP</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Nav tabs (hidden; bottom nav controls) -->
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val" id="statDays">0</div>
+      <div class="stat-lbl">Días</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statCal" style="color:var(--neon2)">0</div>
+      <div class="stat-lbl">Cal Est.</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statKg" style="color:var(--gold)">108</div>
+      <div class="stat-lbl">Kg Peso</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statEx" style="color:var(--neon3)">0</div>
+      <div class="stat-lbl">Ejerc.</div>
+    </div>
+  </div>
+
+  <!-- TODAY Section -->
+  <div id="sec-today" class="section active">
+    <div class="complete-banner" id="completeBanner">
+      <span class="complete-emoji">🎉</span>
+      <div class="complete-title">¡ENTRENAMIENTO COMPLETADO!</div>
+      <div class="complete-sub">Guardá tu progreso abajo</div>
+    </div>
+
+    <div class="day-header">
+      <div class="day-icon" id="dayIcon">💪</div>
+      <div>
+        <div class="day-title" id="dayTitle">DÍA 1 — INICIACIÓN</div>
+        <div class="day-sub" id="daySub">Acostumbrate al movimiento</div>
+        <div class="day-xp" id="dayXpReward">🌟 +80 XP al completar</div>
+      </div>
+    </div>
+
+    <div id="exerciseList"></div>
+
+    <div style="margin-top:8px">
+      <button class="btn btn-purple" onclick="saveToUrl()">💾 GUARDAR PROGRESO EN URL</button>
+    </div>
+    <div class="url-box" id="urlBox" style="display:none;margin-top:12px">
+      <div class="url-title">📋 Copia esta URL para mañana:</div>
+      <textarea class="url-input" id="urlOut" readonly></textarea>
+      <button class="btn btn-ghost" onclick="copyUrl()">📋 Copiar URL</button>
+    </div>
+  </div>
+
+  <!-- STATS Section -->
+  <div id="sec-stats" class="section">
+    <div class="sec-title">Esta semana</div>
+    <div class="week-row" id="weekRow"></div>
+
+    <div class="sec-title">Historial</div>
+    <div id="calWrapper">
+      <div class="cal-grid" id="calDayLabels"></div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <div class="sec-title" style="margin-top:16px">Logros desbloqueados</div>
+    <div id="achList"></div>
+  </div>
+
+  <!-- NUTRITION Section -->
+  <div id="sec-nutri" class="section">
+    <div class="sec-title">Protocolo de nutrición</div>
+    <div class="tip-card">
+      <div class="tip-icon">🧬</div>
+      <div>
+        <div class="tip-title">Creatina monohidrato</div>
+        <div class="tip-desc">3-5g diarios. Mezcla con agua o jugo. La creatina ayuda a recuperar músculo más rápido y aumenta tu fuerza progresivamente. No causa daño renal en personas sanas.</div>
+        <span class="tip-time">⏰ Cualquier hora, con comida</span>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🍮</div>
+      <div>
+        <div class="tip-title">Gelatina para colágeno</div>
+        <div class="tip-desc">1 sobre de gelatina natural sin azúcar diariamente. El colágeno protege tus articulaciones durante el entrenamiento con pesas. CLAVE para prevenir lesiones.</div>
+        <span class="tip-time">⏰ 30-60 min antes de entrenar</span>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🥩</div>
+      <div>
+        <div class="tip-title">Proteína para quemar grasa</div>
+        <div class="tip-desc">Come proteína en cada comida: huevo, pollo, carne, frijoles. La proteína satura más y ayuda a mantener músculo mientras baja la grasa. Apunta a 120-140g/día.</div>
+        <span class="tip-time">⏰ En cada comida principal</span>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">💧</div>
+      <div>
+        <div class="tip-title">Hidratación crítica</div>
+        <div class="tip-desc">2.5-3 litros de agua diarios. Sin hidratación adecuada el rendimiento baja 20% y se pierde menos grasa. Agrega sal a la comida para retener agua en el músculo.</div>
+        <span class="tip-time">⏰ Durante todo el día</span>
+      </div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🕐</div>
+      <div>
+        <div class="tip-title">Ventana anabólica</div>
+        <div class="tip-desc">Come algo con proteína y carbohidrato dentro de los primeros 60 min después de entrenar. Ejemplos: 2 huevos + tortilla, yogur + plátano, atún en pan integral.</div>
+        <span class="tip-time">⏰ Máx 60 min post-entrenamiento</span>
+      </div>
+    </div>
+
+    <div class="sec-title" style="margin-top:8px">Déficit calórico para bajar grasa</div>
+    <div class="bonus-card">
+      <div class="bonus-icon">🔥</div>
+      <div>
+        <div class="bonus-title">Tu meta: ~1,900 kcal/día</div>
+        <div class="bonus-desc">Con 108 kg y actividad moderada, tu mantenimiento es ~2,400 kcal. Un déficit de 500 kcal/día = 0.5 kg menos por semana. NO pases hambre — come bien, come limpio.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE Section -->
+  <div id="sec-perfil" class="section">
+    <div class="sec-title">Tu personaje</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px">
+      <div style="font-size:64px;margin-bottom:8px" id="avatarEmoji">🧙</div>
+      <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:#fff" id="heroName">GUERRERO NOVATO</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px" id="heroClass">Clase: Iniciado</div>
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:center">
+        <div style="background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.2);border-radius:8px;padding:8px 16px">
+          <div style="font-family:'Orbitron',monospace;font-size:20px;color:var(--neon)" id="profXp">0</div>
+          <div style="font-size:10px;color:var(--muted)">XP TOTAL</div>
+        </div>
+        <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:8px;padding:8px 16px">
+          <div style="font-family:'Orbitron',monospace;font-size:20px;color:var(--neon2)" id="profStreak">0</div>
+          <div style="font-size:10px;color:var(--muted)">RACHA</div>
+        </div>
+        <div style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.2);border-radius:8px;padding:8px 16px">
+          <div style="font-family:'Orbitron',monospace;font-size:20px;color:var(--gold)" id="profAch">0</div>
+          <div style="font-size:10px;color:var(--muted)">LOGROS</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title">Actualizar peso</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Peso actual (kg)</div>
+      <div style="display:flex;gap:8px">
+        <input type="number" id="weightInput" value="108" min="50" max="200" step="0.5"
+          style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:16px;font-family:'Orbitron',monospace">
+        <button class="btn btn-green" style="width:auto;padding:10px 20px" onclick="updateWeight()">✓</button>
+      </div>
+    </div>
+
+    <div class="sec-title">Cargar progreso guardado</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Pega la URL guardada del día anterior:</div>
+      <textarea id="loadUrlInput" placeholder="Pega la URL completa aquí..."
+        style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:11px;font-family:monospace;resize:none;height:70px;margin-bottom:8px"></textarea>
+      <button class="btn btn-purple" onclick="loadFromUrl()">📂 Cargar datos</button>
+    </div>
+
+    <div class="sec-title">Árbol de habilidades</div>
+    <div id="skillTree" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="showSec('today',this)">
+    <span class="nav-icon">⚔️</span>MISIÓN
+  </button>
+  <button class="nav-btn" onclick="showSec('stats',this)">
+    <span class="nav-icon">📊</span>STATS
+  </button>
+  <button class="nav-btn" onclick="showSec('nutri',this)">
+    <span class="nav-icon">🥗</span>NUTRICIÓN
+  </button>
+  <button class="nav-btn" onclick="showSec('perfil',this)">
+    <span class="nav-icon">🎮</span>PERFIL
+  </button>
+</div>
+
+<script>
+// ============================================================
+// DATA & STATE
+// ============================================================
+
+const STATE = {
+  xp: 0,
+  level: 1,
+  streak: 0,
+  totalDays: 0,
+  totalExercises: 0,
+  totalCalories: 0,
+  weight: 108,
+  lastWorkoutDate: null,
+  completedDays: [],
+  achievements: [],
+  exerciseHistory: {},
+  currentDayIndex: 0
+};
+
+const XP_PER_LEVEL = [200,350,500,700,900,1200,1500,1900,2400,3000];
+
+const MOTIVATIONAL_QUOTES = [
+  "Los músculos no se construyen en el gym, se construyen en el descanso.",
+  "Cada rep cuenta. Cada segundo importa.",
+  "No te compares con otros. Compárate con quien eras ayer.",
+  "El dolor de hoy es la fuerza del mañana.",
+  "Un día a la vez. Un rep a la vez.",
+  "Tu cuerpo puede. Es tu mente la que necesita convencerse.",
+  "El progreso es progreso, sin importar cuán pequeño.",
+  "Eres más fuerte de lo que crees."
+];
+
+const REST_QUOTES = [
+  "Respira. Los músculos crecen durante el descanso.",
+  "Hidratate. El agua es anabólica.",
+  "Visualiza cómo se ven tus músculos recuperándose.",
+  "Cada segundo de descanso te hace más fuerte.",
+  "Este momento de pausa es tan importante como el ejercicio."
+];
+
+// ============================================================
+// EXERCISE PROGRAMS — 90 days progressive
+// ============================================================
+
+const PROGRAMS = [
+  // PHASE 1: Weeks 1-4 — Activation (days 1-4 per week, rest day 5,6,7)
+  {
+    phase: 1,
+    week: 1,
+    days: [
+      {
+        title: "DÍA 1 — INICIACIÓN",
+        sub: "Despierta el cuerpo",
+        icon: "🌱",
+        xpReward: 80,
+        isRest: false,
+        exercises: [
+          { name: "Marcha en el lugar", emoji: "🚶", sets: 1, reps: 0, duration: 120, xp: 10, note: "2 minutos continuo, levanta las rodillas", type: "cardio" },
+          { name: "Sentadillas asistidas (sostenido)", emoji: "🪑", sets: 2, reps: 5, xp: 15, note: "Puedes apoyarte en una silla, baja lento", type: "legs" },
+          { name: "Press de mancuernas sentado", emoji: "💪", sets: 2, reps: 3, xp: 20, note: "30 lbs. Muy lento. Si no puedes hacer 3, está bien", type: "upper" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 300, xp: 25, note: "5 minutos ritmo suave, no te agotes", type: "cardio" },
+          { name: "Estiramiento de cadera", emoji: "🧘", sets: 1, reps: 0, duration: 60, xp: 10, note: "Mantén cada lado 30 seg", type: "stretch" }
+        ]
+      },
+      {
+        title: "DÍA 2 — MOVILIDAD",
+        sub: "Articulaciones felices",
+        icon: "🤸",
+        xpReward: 80,
+        isRest: false,
+        exercises: [
+          { name: "Rotación de hombros", emoji: "🔄", sets: 2, reps: 10, xp: 10, note: "Sin peso, círculos grandes", type: "warm" },
+          { name: "Curl de bíceps con mancuerna", emoji: "💪", sets: 2, reps: 4, xp: 20, note: "30 lbs, muy despacio, 3 seg subir 3 seg bajar", type: "upper" },
+          { name: "Extensiones de tríceps con banda", emoji: "🎗️", sets: 2, reps: 5, xp: 15, note: "Banda elástica ligera, codos fijos", type: "upper" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 420, xp: 30, note: "7 minutos, ritmo cómodo, respira bien", type: "cardio" },
+          { name: "Estiramiento de cuello y espalda", emoji: "🧘", sets: 1, reps: 0, duration: 90, xp: 10, note: "Suave, sin forzar", type: "stretch" }
+        ]
+      },
+      {
+        title: "DÍA 3 — PIERNAS",
+        sub: "Base fuerte",
+        icon: "🦵",
+        xpReward: 90,
+        isRest: false,
+        exercises: [
+          { name: "Caminata en el lugar", emoji: "🚶", sets: 1, reps: 0, duration: 120, xp: 10, note: "Calentamiento 2 min", type: "warm" },
+          { name: "Sentadillas pared (wall squat)", emoji: "🧱", sets: 2, reps: 5, xp: 20, note: "Espalda pegada a la pared, aguanta 2 seg abajo", type: "legs" },
+          { name: "Elevación de talones de pie", emoji: "⬆️", sets: 3, reps: 8, xp: 15, note: "Apóyate en la pared, trabaja las pantorrillas", type: "legs" },
+          { name: "Bandas: abducción de cadera", emoji: "🎗️", sets: 2, reps: 6, xp: 15, note: "Banda en rodillas, separa piernas sentado", type: "legs" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 480, xp: 30, note: "8 minutos, velocidad moderada", type: "cardio" }
+        ]
+      },
+      {
+        title: "DÍA 4 — UPPER BODY",
+        sub: "Pecho y espalda",
+        icon: "🛡️",
+        xpReward: 90,
+        isRest: false,
+        exercises: [
+          { name: "Press de pecho inclinado (mancuerna)", emoji: "💪", sets: 2, reps: 3, xp: 25, note: "30 lbs, acostado con respaldo inclinado. 3 rep si puedes", type: "upper" },
+          { name: "Remo con mancuerna (un brazo)", emoji: "⛵", sets: 2, reps: 4, xp: 20, note: "30 lbs, apoya la mano libre en rodilla", type: "back" },
+          { name: "Elevación lateral con banda", emoji: "🎗️", sets: 2, reps: 6, xp: 15, note: "Hombros. Banda desde el pie", type: "upper" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 480, xp: 30, note: "8 minutos — ya vas aumentando resistencia", type: "cardio" },
+          { name: "Estiramiento pecho y espalda", emoji: "🧘", sets: 1, reps: 0, duration: 60, xp: 10, note: "Abre el pecho, cruza brazos para la espalda", type: "stretch" }
+        ]
+      },
+      { title: "DESCANSO ACTIVO", sub: "Camina 15 min si puedes", icon: "😴", xpReward: 20, isRest: true, exercises: [] },
+      { title: "DESCANSO ACTIVO", sub: "Estira o sal a caminar", icon: "🌿", xpReward: 20, isRest: true, exercises: [] },
+      { title: "DESCANSO TOTAL", sub: "Recupera. Mañana más fuerte", icon: "💤", xpReward: 10, isRest: true, exercises: [] }
+    ]
+  },
+  // PHASE 1 WEEK 2 — slight increase
+  {
+    phase: 1,
+    week: 2,
+    days: [
+      {
+        title: "SEMANA 2 — DÍA 1",
+        sub: "Un poco más",
+        icon: "📈",
+        xpReward: 100,
+        isRest: false,
+        exercises: [
+          { name: "Marcha + rodillas altas", emoji: "🚶", sets: 1, reps: 0, duration: 150, xp: 12, note: "2.5 minutos — más rápido que la semana pasada", type: "warm" },
+          { name: "Sentadillas pared", emoji: "🧱", sets: 3, reps: 6, xp: 22, note: "1 serie más. Puedes hacerlo.", type: "legs" },
+          { name: "Press de mancuernas sentado", emoji: "💪", sets: 2, reps: 4, xp: 25, note: "30 lbs. Intenta llegar a 4 reps esta semana", type: "upper" },
+          { name: "Curl bíceps", emoji: "💪", sets: 2, reps: 4, xp: 20, note: "30 lbs. Súper despacio en la bajada", type: "upper" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 540, xp: 35, note: "9 minutos. ¡Ya aguantas más!", type: "cardio" }
+        ]
+      },
+      {
+        title: "SEMANA 2 — DÍA 2",
+        sub: "Espalda y hombros",
+        icon: "🛡️",
+        xpReward: 100,
+        isRest: false,
+        exercises: [
+          { name: "Rotación de hombros con mancuerna", emoji: "🔄", sets: 2, reps: 8, xp: 15, note: "Peso ligero (30 lbs = heavy por ahora, usa banda si necesitas)", type: "warm" },
+          { name: "Remo mancuerna (ambos brazos alternado)", emoji: "⛵", sets: 3, reps: 4, xp: 25, note: "30 lbs, un brazo a la vez", type: "back" },
+          { name: "Elevación frontal con mancuerna", emoji: "⬆️", sets: 2, reps: 5, xp: 20, note: "30 lbs si puedes, sino usa banda. Hombros.", type: "upper" },
+          { name: "Bandas: press horizontal", emoji: "🎗️", sets: 2, reps: 8, xp: 15, note: "Agarra la banda, empuja hacia adelante", type: "upper" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 600, xp: 40, note: "10 minutos. Marca tu récord.", type: "cardio" }
+        ]
+      },
+      {
+        title: "SEMANA 2 — DÍA 3",
+        sub: "Full body liviano",
+        icon: "⚡",
+        xpReward: 110,
+        isRest: false,
+        exercises: [
+          { name: "Sentadillas libres", emoji: "🦵", sets: 3, reps: 7, xp: 20, note: "Sin peso. Bajá lento y controlado", type: "legs" },
+          { name: "Press pecho mancuerna", emoji: "💪", sets: 2, reps: 4, xp: 25, note: "30 lbs acostado", type: "upper" },
+          { name: "Extensión de cadera en pared", emoji: "🦵", sets: 2, reps: 8, xp: 15, note: "Apóyate en la pared, empuja pierna atrás", type: "legs" },
+          { name: "Banda: jalón hacia abajo", emoji: "🎗️", sets: 2, reps: 8, xp: 15, note: "Agarra banda sobre la cabeza, jala hacia cintura", type: "back" },
+          { name: "Bicicleta estática", emoji: "🚴", sets: 1, reps: 0, duration: 600, xp: 40, note: "10 minutos. Mantén consistencia.", type: "cardio" }
+        ]
+      },
+      {
+        title: "SEMANA 2 — DÍA 4",
+        sub: "Cardio + fuerza",
+        icon: "🔥",
+        xpReward: 110,
+        isRest: false,
+        exercises: [
+          { name: "Bicicleta estática HIIT", emoji: "🚴", sets: 1, reps: 0, duration: 300, xp: 40, note: "5 min: 30 seg rápido, 60 seg lento, repite", type: "cardio" },
+          { name: "Curl bíceps + press arriba", emoji: "💪", sets: 2, reps: 3, xp: 25, note: "30 lbs. Curl y luego press sobre la cabeza", type: "upper" },
+          { name: "Sentadillas con mancuerna (goblet)", emoji: "🦵", sets: 2, reps: 5, xp: 25, note: "Una mancuerna de 30 lbs al pecho mientras bajas", type: "legs" },
+          { name: "Plank modificado (rodillas)", emoji: "🧱", sets: 2, reps: 0, duration: 20, xp: 15, note: "Tabla desde rodillas. 20 segundos por set", type: "core" },
+          { name: "Estiramiento total", emoji: "🧘", sets: 1, reps: 0, duration: 120, xp: 10, note: "2 minutos completos. Cada músculo.", type: "stretch" }
+        ]
+      },
+      { title: "DESCANSO ACTIVO", sub: "15-20 min caminata", icon: "🌿", xpReward: 25, isRest: true, exercises: [] },
+      { title: "DESCANSO ACTIVO", sub: "Estiramiento opcional", icon: "😴", xpReward: 20, isRest: true, exercises: [] },
+      { title: "DESCANSO TOTAL", sub: "Ya llevas 2 semanas. ¡Eres increíble!", icon: "🏅", xpReward: 30, isRest: true, exercises: [] }
+    ]
+  }
+];
+
+// Flatten all days into a single array
+const ALL_DAYS = [];
+PROGRAMS.forEach(prog => prog.days.forEach(day => ALL_DAYS.push({ ...day, phase: prog.phase, week: prog.week })));
+// Pad to 90 days by cycling
+while (ALL_DAYS.length < 90) {
+  const base = ALL_DAYS[ALL_DAYS.length - 14]; // repeat with small changes
+  if (base) ALL_DAYS.push({ ...base, title: base.title.replace(/SEMANA \d+/, `SEMANA ${Math.floor(ALL_DAYS.length/7)+1}`), week: Math.floor(ALL_DAYS.length/7)+1 });
+  else ALL_DAYS.push({ title: "ENTRENAMIENTO", sub: "Sigue progresando", icon: "💪", xpReward: 120, isRest: false, exercises: ALL_DAYS[0].exercises });
+}
+
+const ACHIEVEMENTS = [
+  { id: "first_workout", name: "¡Primera batalla!", desc: "Completaste tu primer entrenamiento", emoji: "⚔️", xp: 50, condition: s => s.totalDays >= 1 },
+  { id: "three_days", name: "Racha de fuego", desc: "3 días seguidos entrenando", emoji: "🔥", xp: 100, condition: s => s.streak >= 3 },
+  { id: "week1", name: "Primera semana", desc: "7 días de entrenamiento completados", emoji: "🏅", xp: 200, condition: s => s.totalDays >= 7 },
+  { id: "level3", name: "Guerrero nivel 3", desc: "Alcanzaste el nivel 3", emoji: "⬆️", xp: 150, condition: s => s.level >= 3 },
+  { id: "cardio_hero", name: "Héroe del cardio", desc: "50+ minutos en bicicleta total", emoji: "🚴", xp: 100, condition: s => (s.totalCalories || 0) > 200 },
+  { id: "two_weeks", name: "Dos semanas duro", desc: "14 días completados. ¡Hábito formado!", emoji: "🔱", xp: 300, condition: s => s.totalDays >= 14 },
+  { id: "month1", name: "Un mes de poder", desc: "30 días. Ya eres otro nivel.", emoji: "🏆", xp: 500, condition: s => s.totalDays >= 30 }
+];
+
+// ============================================================
+// TIMER STATE
+// ============================================================
+let activeExIndex = -1;
+let currentSets = {};
+let currentReps = {};
+let timerInterval = null;
+let timerSecs = 0;
+let timerRunning = false;
+let restInterval = null;
+
+// ============================================================
+// INIT
+// ============================================================
+
+function init() {
+  loadStateFromUrl();
+  renderAll();
+}
+
+function renderAll() {
+  renderHeader();
+  renderToday();
+  renderStats();
+  renderSkillTree();
+  renderAchList();
+}
+
+function renderHeader() {
+  const xpForLevel = XP_PER_LEVEL[Math.min(STATE.level - 1, XP_PER_LEVEL.length - 1)];
+  const prevXp = STATE.level > 1 ? XP_PER_LEVEL.slice(0, STATE.level - 1).reduce((a, b) => a + b, 0) : 0;
+  const xpInLevel = STATE.xp - prevXp;
+  const pct = Math.min(100, Math.round((xpInLevel / xpForLevel) * 100));
+
+  document.getElementById('lvlNum').textContent = STATE.level;
+  document.getElementById('curXp').textContent = xpInLevel;
+  document.getElementById('maxXp').textContent = xpForLevel;
+  document.getElementById('xpFill').style.width = pct + '%';
+  document.getElementById('streakNum').textContent = STATE.streak;
+  document.getElementById('statDays').textContent = STATE.totalDays;
+  document.getElementById('statCal').textContent = Math.round(STATE.totalCalories || 0);
+  document.getElementById('statKg').textContent = STATE.weight;
+  document.getElementById('statEx').textContent = STATE.totalExercises || 0;
+  document.getElementById('profXp').textContent = STATE.xp;
+  document.getElementById('profStreak').textContent = STATE.streak;
+  document.getElementById('profAch').textContent = STATE.achievements.length;
+
+  // Hero progression
+  const heroes = [
+    [1, '🧙', 'GUERRERO NOVATO', 'Iniciado'],
+    [3, '⚔️', 'CAZADOR', 'Aventurero'],
+    [5, '🛡️', 'PALADÍN', 'Veterano'],
+    [8, '🦁', 'CAMPEÓN', 'Elite'],
+    [10, '👑', 'LEYENDA', 'Maestro']
+  ];
+  const hero = heroes.reduce((a, b) => STATE.level >= b[0] ? b : a, heroes[0]);
+  document.getElementById('avatarEmoji').textContent = hero[1];
+  document.getElementById('heroName').textContent = hero[2];
+  document.getElementById('heroClass').textContent = 'Clase: ' + hero[3];
+}
+
+function renderToday() {
+  const dayIdx = STATE.currentDayIndex % ALL_DAYS.length;
+  const day = ALL_DAYS[dayIdx];
+
+  document.getElementById('dayIcon').textContent = day.icon;
+  document.getElementById('dayTitle').textContent = day.title;
+  document.getElementById('daySub').textContent = day.sub;
+  document.getElementById('dayXpReward').textContent = `🌟 +${day.xpReward} XP al completar`;
+
+  const list = document.getElementById('exerciseList');
+
+  if (day.isRest) {
+    list.innerHTML = `
+      <div style="background:var(--dark3);border:1px solid rgba(124,58,237,0.3);border-radius:16px;padding:24px;text-align:center">
+        <div style="font-size:56px;margin-bottom:12px">${day.icon}</div>
+        <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--neon3);margin-bottom:8px">${day.title}</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:16px">${day.sub}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">
+          El descanso es parte del programa.<br>
+          Toma tu gelatina y creatina hoy también.<br>
+          Mañana sigues más fuerte. 💪
+        </div>
+        <button class="btn btn-purple" style="margin-top:16px" onclick="markRestDay()">✅ MARCAR DÍA COMPLETADO (+${day.xpReward} XP)</button>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = day.exercises.map((ex, i) => {
+    const hasDuration = ex.duration && ex.type === 'cardio' || ex.type === 'stretch' || ex.type === 'core' || ex.type === 'warm';
+    const detail = ex.reps > 0
+      ? `${ex.sets} serie(s) × ${ex.reps} rep(s)`
+      : `${ex.duration}s de duración`;
+    return `
+    <div class="ex-card" id="exCard${i}">
+      <div class="ex-top" onclick="toggleEx(${i})">
+        <div class="ex-emoji">${ex.emoji}</div>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-detail">${detail} • ${ex.note}</div>
+        </div>
+        <div class="ex-xp-badge">+${ex.xp} XP</div>
+        <div class="ex-check" id="exCheck${i}"></div>
+      </div>
+      <div class="ex-panel" id="exPanel${i}">
+        ${renderExPanel(ex, i)}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Check if today already done
+  const today = todayStr();
+  if (STATE.completedDays.includes(today)) {
+    document.getElementById('completeBanner').classList.add('show');
+  }
+}
+
+function renderExPanel(ex, i) {
+  if (!currentSets[i]) currentSets[i] = 0;
+  if (!currentReps[i]) currentReps[i] = ex.reps || 0;
+
+  if (ex.type === 'cardio' || (ex.duration && ex.reps === 0)) {
+    return `
+      <div class="timer-display">
+        <div class="timer-num" id="timerNum${i}">0:00</div>
+        <div class="timer-label">/ ${fmtTime(ex.duration || 60)} objetivo</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-orange" id="timerBtn${i}" onclick="toggleTimer(${i}, ${ex.duration || 60})">▶ INICIAR</button>
+        <button class="btn btn-ghost" style="width:auto;padding:12px" onclick="resetTimer(${i})">↺</button>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn btn-green" onclick="completeEx(${i})">✓ COMPLETADO (+${ex.xp} XP)</button>
+      </div>`;
+  }
+
+  const setDots = Array.from({ length: ex.sets }, (_, s) => `
+    <div class="set-dot ${s < currentSets[i] ? 'done' : s === currentSets[i] ? 'current' : ''}" id="setDot${i}_${s}" onclick="completSet(${i},${s},${ex.sets})">
+      S${s + 1}
+    </div>`).join('');
+
+  return `
+    <div class="sets-row">${setDots}</div>
+    <div class="rep-counter">
+      <button class="rep-btn" onclick="changeRep(${i},-1)">−</button>
+      <div class="rep-num" id="repNum${i}">${ex.reps}</div>
+      <button class="rep-btn" onclick="changeRep(${i},1)">+</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px">Reps realizadas en este set</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-orange" onclick="completSet(${i}, ${0}, ${ex.sets})">✓ SET COMPLETO</button>
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn btn-green" id="exDoneBtn${i}" onclick="completeEx(${i})" ${currentSets[i] < ex.sets ? 'disabled' : ''}>
+        ⚡ EJERCICIO COMPLETO (+${ex.xp} XP)
+      </button>
+    </div>`;
+}
+
+// ============================================================
+// INTERACTIONS
+// ============================================================
+
+function toggleEx(i) {
+  const panel = document.getElementById(`exPanel${i}`);
+  const card = document.getElementById(`exCard${i}`);
+  const isOpen = panel.classList.contains('open');
+  document.querySelectorAll('.ex-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.ex-card.active-ex').forEach(c => c.classList.remove('active-ex'));
+  if (!isOpen) { panel.classList.add('open'); card.classList.add('active-ex'); activeExIndex = i; }
+  else { activeExIndex = -1; }
+}
+
+function changeRep(i, delta) {
+  const dayIdx = STATE.currentDayIndex % ALL_DAYS.length;
+  const ex = ALL_DAYS[dayIdx].exercises[i];
+  currentReps[i] = Math.max(0, (currentReps[i] || ex.reps) + delta);
+  const el = document.getElementById(`repNum${i}`);
+  if (el) el.textContent = currentReps[i];
+}
+
+function completSet(i, s, totalSets) {
+  if (!currentSets[i]) currentSets[i] = 0;
+  currentSets[i]++;
+  const dayIdx = STATE.currentDayIndex % ALL_DAYS.length;
+  const ex = ALL_DAYS[dayIdx].exercises[i];
+
+  // Update dots
+  for (let k = 0; k < totalSets; k++) {
+    const dot = document.getElementById(`setDot${i}_${k}`);
+    if (dot) {
+      dot.className = `set-dot ${k < currentSets[i] ? 'done' : k === currentSets[i] ? 'current' : ''}`;
+    }
+  }
+
+  // Enable done button if all sets done
+  const doneBtn = document.getElementById(`exDoneBtn${i}`);
+  if (doneBtn && currentSets[i] >= totalSets) doneBtn.disabled = false;
+
+  // Reset reps counter
+  currentReps[i] = ex.reps;
+  const repEl = document.getElementById(`repNum${i}`);
+  if (repEl) repEl.textContent = ex.reps;
+
+  toast('💪', `Set ${currentSets[i]}/${totalSets} completado`, '+' + Math.round(ex.xp / totalSets) + ' XP parcial');
+
+  // Start rest timer if not last set
+  if (currentSets[i] < totalSets) startRest(60);
+}
+
+function completeEx(i) {
+  const dayIdx = STATE.currentDayIndex % ALL_DAYS.length;
+  const ex = ALL_DAYS[dayIdx].exercises[i];
+  const card = document.getElementById(`exCard${i}`);
+  const check = document.getElementById(`exCheck${i}`);
+
+  if (!card || card.classList.contains('done')) return;
+
+  card.classList.add('done');
+  card.classList.remove('active-ex');
+  document.getElementById(`exPanel${i}`).classList.remove('open');
+  check.textContent = '✓';
+
+  addXp(ex.xp);
+  STATE.totalExercises = (STATE.totalExercises || 0) + 1;
+  if (ex.type === 'cardio') STATE.totalCalories = (STATE.totalCalories || 0) + Math.round((ex.duration || 300) / 60 * 6);
+
+  toast('⚡', ex.name + ' completado!', '+' + ex.xp + ' XP');
+
+  checkAllDone();
+  checkAchievements();
+}
+
+function checkAllDone() {
+  const dayIdx = STATE.currentDayIndex % ALL_DAYS.length;
+  const day = ALL_DAYS[dayIdx];
+  const allDone = day.exercises.every((_, i) => document.getElementById(`exCard${i}`)?.classList.contains('done'));
+
+  if (allDone) {
+    const today = todayStr();
+    if (!STATE.completedDays.includes(today)) {
+      STATE.completedDays.push(today);
+      STATE.totalDays++;
+      STATE.lastWorkoutDate = today;
+      STATE.currentDayIndex++;
+      addXp(day.xpReward);
+      updateStreak();
+      document.getElementById('completeBanner').classList.add('show');
+      showAchievement('🎉', '¡ENTRENAMIENTO COMPLETADO!', day.sub + '. ¡Eres una bestia!', day.xpReward);
+      checkAchievements();
+    }
+    renderHeader();
+  }
+}
+
+function markRestDay() {
+  const dayIdx = STATE.currentDayIndex % ALL_DAYS.length;
+  const day = ALL_DAYS[dayIdx];
+  const today = todayStr();
+  if (!STATE.completedDays.includes(today)) {
+    STATE.completedDays.push(today);
+    STATE.totalDays++;
+    STATE.currentDayIndex++;
+    addXp(day.xpReward);
+    updateStreak();
+    toast('😴', 'Descanso registrado', '+' + day.xpReward + ' XP');
+    renderAll();
+  }
+}
+
+function addXp(amount) {
+  STATE.xp += amount;
+  // Level up check
+  let totalXpForLevel = 0;
+  for (let l = 0; l < XP_PER_LEVEL.length; l++) {
+    totalXpForLevel += XP_PER_LEVEL[l];
+    if (STATE.xp < totalXpForLevel) {
+      if (STATE.level !== l + 1) {
+        STATE.level = l + 1;
+        showAchievement('⬆️', '¡SUBISTE DE NIVEL!', `Ahora eres nivel ${STATE.level}. ¡Sigue así!`, 0);
+      }
+      break;
+    } else {
+      STATE.level = l + 2;
+    }
+  }
+  renderHeader();
+}
+
+function updateStreak() {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const ydStr = yesterday.toISOString().split('T')[0];
+  if (STATE.completedDays.includes(ydStr) || STATE.streak === 0) STATE.streak++;
+  else if (!STATE.completedDays.includes(todayStr())) STATE.streak = 1;
+}
+
+// ============================================================
+// TIMERS
+// ============================================================
+
+function toggleTimer(i, duration) {
+  if (timerRunning && activeExIndex === i) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById(`timerBtn${i}`).textContent = '▶ CONTINUAR';
+  } else {
+    timerRunning = true;
+    activeExIndex = i;
+    document.getElementById(`timerBtn${i}`).textContent = '⏸ PAUSAR';
+    timerInterval = setInterval(() => {
+      timerSecs++;
+      const el = document.getElementById(`timerNum${i}`);
+      if (el) el.textContent = fmtTime(timerSecs);
+      if (timerSecs >= duration) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        completeEx(i);
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer(i) {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSecs = 0;
+  const el = document.getElementById(`timerNum${i}`);
+  if (el) el.textContent = '0:00';
+  const btn = document.getElementById(`timerBtn${i}`);
+  if (btn) btn.textContent = '▶ INICIAR';
+}
+
+function startRest(secs) {
+  let remaining = secs;
+  const overlay = document.getElementById('restOverlay');
+  const numEl = document.getElementById('restTimerNum');
+  overlay.classList.add('show');
+  document.getElementById('restQuote').textContent = REST_QUOTES[Math.floor(Math.random() * REST_QUOTES.length)];
+  numEl.textContent = remaining;
+  if (restInterval) clearInterval(restInterval);
+  restInterval = setInterval(() => {
+    remaining--;
+    numEl.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(restInterval);
+      overlay.classList.remove('show');
+    }
+  }, 1000);
+}
+
+function skipRest() {
+  clearInterval(restInterval);
+  document.getElementById('restOverlay').classList.remove('show');
+}
+
+// ============================================================
+// ACHIEVEMENTS
+// ============================================================
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(ach => {
+    if (!STATE.achievements.includes(ach.id) && ach.condition(STATE)) {
+      STATE.achievements.push(ach.id);
+      setTimeout(() => showAchievement(ach.emoji, ach.name, ach.desc, ach.xp), 800);
+      if (ach.xp > 0) addXp(ach.xp);
+    }
+  });
+}
+
+function showAchievement(emoji, title, desc, xp) {
+  document.getElementById('achEmoji').textContent = emoji;
+  document.getElementById('achTitle').textContent = title;
+  document.getElementById('achDesc').textContent = desc;
+  document.getElementById('achXp').textContent = xp > 0 ? `+${xp} XP` : '';
+  document.getElementById('achOverlay').classList.add('show');
+}
+
+function closeAch() {
+  document.getElementById('achOverlay').classList.remove('show');
+}
+
+// ============================================================
+// STATS
+// ============================================================
+
+function renderStats() {
+  renderWeekRow();
+  renderCalendar();
+  renderAchList();
+}
+
+function renderWeekRow() {
+  const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  const today = new Date();
+  const dow = (today.getDay() + 6) % 7; // 0=Monday
+  const html = days.map((d, i) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - dow + i);
+    const ds = date.toISOString().split('T')[0];
+    const done = STATE.completedDays.includes(ds);
+    const isToday = i === dow;
+    return `<div class="week-day ${done ? 'done' : ''} ${isToday ? 'today' : ''}">
+      <div class="wd-lbl">${d}</div>
+      <div class="wd-dot"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('weekRow').innerHTML = html;
+}
+
+function renderCalendar() {
+  const lbls = ['L','M','X','J','V','S','D'];
+  document.getElementById('calDayLabels').innerHTML = lbls.map(d => `<div class="cal-day-hdr">${d}</div>`).join('');
+
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const startDow = (start.getDay() + 6) % 7;
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+  let html = Array(startDow).fill('<div></div>').join('');
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(today.getFullYear(), today.getMonth(), d);
+    const ds = date.toISOString().split('T')[0];
+    const done = STATE.completedDays.includes(ds);
+    const isToday = d === today.getDate();
+    const dayIdx = Math.floor((date - new Date(today.getFullYear(), today.getMonth(), 1)) / 86400000);
+    const progDay = ALL_DAYS[(STATE.currentDayIndex - (today.getDate() - d) + 365) % ALL_DAYS.length];
+    const isRest = progDay?.isRest;
+    html += `<div class="cal-day ${done ? 'done' : ''} ${isToday ? 'today' : ''} ${!done && isRest ? 'rest-day' : ''}">${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function renderAchList() {
+  const list = document.getElementById('achList');
+  if (!list) return;
+  list.innerHTML = ACHIEVEMENTS.map(ach => {
+    const unlocked = STATE.achievements.includes(ach.id);
+    return `<div style="background:var(--card);border:1px solid ${unlocked ? 'rgba(255,215,0,0.3)' : 'var(--border)'};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;opacity:${unlocked ? '1' : '0.4'}">
+      <div style="font-size:28px">${ach.emoji}</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${unlocked ? 'var(--gold)' : 'var(--muted)'}">${ach.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${ach.desc}</div>
+        ${unlocked ? `<div style="font-size:11px;color:var(--neon);margin-top:2px">+${ach.xp} XP • Desbloqueado ✓</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSkillTree() {
+  const tree = document.getElementById('skillTree');
+  if (!tree) return;
+  const skills = [
+    { icon: '🏋️', name: 'Fuerza básica', desc: 'Pesas y resistencia', unlocked: STATE.level >= 1 },
+    { icon: '🚴', name: 'Cardio guerrero', desc: 'Bicicleta y resistencia', unlocked: STATE.totalDays >= 5 },
+    { icon: '🎗️', name: 'Maestro de bandas', desc: 'Bandas elásticas avanzado', unlocked: STATE.totalExercises >= 20 },
+    { icon: '🧘', name: 'Flexibilidad ninja', desc: 'Movilidad y estiramiento', unlocked: STATE.streak >= 7 },
+    { icon: '🏆', name: 'Modo bestia', desc: 'Alta intensidad', unlocked: STATE.level >= 5 }
+  ];
+  tree.innerHTML = skills.map(s => `
+    <div style="background:var(--card);border:1px solid ${s.unlocked ? 'rgba(0,255,136,0.3)' : 'var(--border)'};border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;opacity:${s.unlocked ? '1' : '0.4'}">
+      <div style="font-size:28px">${s.icon}</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${s.unlocked ? 'var(--neon)' : 'var(--muted)'}">${s.name} ${s.unlocked ? '✓' : '🔒'}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// SAVE / LOAD URL
+// ============================================================
+
+function saveToUrl() {
+  const data = btoa(JSON.stringify(STATE));
+  const url = window.location.origin + window.location.pathname + '?d=' + encodeURIComponent(data);
+  document.getElementById('urlBox').style.display = 'block';
+  document.getElementById('urlOut').value = url;
+  toast('💾', '¡Progreso listo!', 'Copia la URL para mañana');
+}
+
+function copyUrl() {
+  const ta = document.getElementById('urlOut');
+  ta.select();
+  document.execCommand('copy');
+  toast('📋', '¡URL copiada!', 'Pégala en el perfil mañana');
+}
+
+function loadFromUrl() {
+  const raw = document.getElementById('loadUrlInput').value.trim();
+  try {
+    let data;
+    if (raw.includes('?d=')) {
+      const encoded = raw.split('?d=')[1];
+      data = JSON.parse(atob(decodeURIComponent(encoded)));
+    } else {
+      data = JSON.parse(atob(decodeURIComponent(raw)));
+    }
+    Object.assign(STATE, data);
+    currentSets = {}; currentReps = {};
+    renderAll();
+    toast('📂', '¡Datos cargados!', 'Bienvenido de vuelta, guerrero');
+  } catch (e) {
+    toast('❌', 'Error al cargar', 'Verifica que la URL sea correcta');
+  }
+}
+
+function loadStateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const d = params.get('d');
+  if (d) {
+    try {
+      const data = JSON.parse(atob(decodeURIComponent(d)));
+      Object.assign(STATE, data);
+    } catch (e) {}
+  }
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function showSec(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'stats') renderStats();
+}
+
+function updateWeight() {
+  const w = parseFloat(document.getElementById('weightInput').value);
+  if (w > 0) {
+    STATE.weight = w;
+    document.getElementById('statKg').textContent = w;
+    toast('⚖️', 'Peso actualizado', w + ' kg registrado');
+  }
+}
+
+function toast(icon, title, sub) {
+  const wrap = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<div class="toast-icon">${icon}</div><div class="toast-msg"><div class="toast-title">${title}</div><div class="toast-sub">${sub}</div></div>`;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+</body>
+</html>
